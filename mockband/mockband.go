@@ -48,12 +48,12 @@ func (m *Mock) When(name string, params ...interface{}) *call {
 	return list.createCall(params)
 }
 
-func (m *Mock) GetCall(name string, params ...interface{}) *call {
+func (m *Mock) GetCall(name string, params ...interface{}) *results {
 	call := m.getCall(name, params)
 	if call == nil {
 		reckon.Fail(errors.New("Function not found: " + name))
 	}
-	return call
+	return &call.results
 }
 
 func (m *Mock) getCall(name string, params ...interface{}) *call {
@@ -64,13 +64,39 @@ func (m *Mock) getCall(name string, params ...interface{}) *call {
 	return list.getCall(params)
 }
 
+type results struct {
+	list []result
+}
+
+func (r *results) GetResults(index int) *Args {
+	return r.list[index].results
+}
+
+func (r *results) GetParams(index int) *Args {
+	return r.list[index].params
+}
+
+func (r *results) add(result result) {
+	r.list = append(r.list, result)
+}
+
+type result struct {
+	params  *Args
+	results *Args
+}
+
 type call struct {
-	list  []func(args *Args) *Args
-	index int
+	list    []func(args *Args) *Args
+	index   int
+	results results
 }
 
 func (c *call) exec(args *Args) *Args {
 	out := c.list[c.index](args)
+	c.results.add(result{
+		params:  args,
+		results: out,
+	})
 	c.index = (c.index + 1) % len(c.list)
 	return out
 }
@@ -160,8 +186,20 @@ func (a *Args) add(value reflect.Value) {
 }
 
 func (a *Args) matches(args *Args) bool {
-	// TODO --
-	return false
+	if len(*args) > len(*a) {
+		return false
+	}
+	count := len(*args)
+	for x := 0; x < count; x++ {
+		if !reflect.DeepEqual((*a)[x], (*args)[x]) && !reflect.DeepEqual((*a)[x], any) {
+			return false
+		}
+	}
+	return true
 }
 
-var Any interface{} = struct{}{}
+func Any() interface{} {
+	return any
+}
+
+var any interface{} = struct{}{}
