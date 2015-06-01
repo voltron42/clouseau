@@ -53,6 +53,14 @@ func (m *Mock) GetCall(name string, params ...interface{}) *results {
 	if call == nil {
 		reckon.Fail(errors.New("Function not found: " + name))
 	}
+	return &metric{call.results.count()}
+}
+
+func (m *Mock) HasCalled(name string, params ...interface{}) *metric {
+  call := m.getCall(name, params)
+	if call == nil {
+		reckon.Fail(errors.New("Function not found: " + name))
+	}
 	return &call.results
 }
 
@@ -62,6 +70,14 @@ func (m *Mock) getCall(name string, params ...interface{}) *call {
 		return nil
 	}
 	return list.getCall(params)
+}
+
+type metric struct {
+  count int
+}
+
+func (m *metric) Times(times int) bool {
+  return m.count == times
 }
 
 type results struct {
@@ -78,6 +94,10 @@ func (r *results) GetParams(index int) *Args {
 
 func (r *results) add(result result) {
 	r.list = append(r.list, result)
+}
+
+func (r *results) count() int {
+  return len(r.list)
 }
 
 type result struct {

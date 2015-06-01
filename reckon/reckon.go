@@ -19,6 +19,8 @@ func That(actual interface{}) *reckoning {
 
 type reckoning struct {
 	actual interface{}
+	Is is
+	Has has
 }
 
 func (r *reckoning) Equals(expected interface{}) {
@@ -26,3 +28,6 @@ func (r *reckoning) Equals(expected interface{}) {
 		Fail(errors.New(fmt.Sprintf("Reckoning Failed:\n\tActual: %v\n\tExpected: %v\n", r.actual, expected)))
 	}
 }
+
+
+
