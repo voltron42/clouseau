@@ -23,9 +23,13 @@ type reckoning struct {
 	Has has
 }
 
-func (r *reckoning) Equals(expected interface{}) {
-	if !reflect.DeepEqual(r.actual, expected) {
-		Fail(errors.New(fmt.Sprintf("Reckoning Failed:\n\tActual: %v\n\tExpected: %v\n", r.actual, expected)))
+type is struct {
+  	actual interface{}
+}
+
+func (i *is) EqualTo(expected interface{}) {
+	if !reflect.DeepEqual(i.actual, expected) {
+		Fail(errors.New(fmt.Sprintf("Reckoning Failed:\n\tActual: %v\n\tExpected: %v\n", i.actual, expected)))
 	}
 }
 
