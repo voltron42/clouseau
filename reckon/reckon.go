@@ -39,12 +39,12 @@ func (o *objContains) Exist() {
 	expectations.check("exists", o.state, o.actual)
 }
 
-func (o *objContains) Match(expected interface{}) {
-	expectations.check("matches", o.state, o.actual, expected)
+func (o *objContains) Match(regex string) {
+	expectations.check("matches", o.state, o.actual, regex)
 }
 
-func (o *objContains) Contain(expected interface{}) {
-	expectations.check("contains", o.state, o.actual, expected)
+func (o *objContains) Contain(needle string) {
+	expectations.check("contains", o.state, o.actual, needle)
 }
 
 // Contains
