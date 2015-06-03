@@ -77,28 +77,37 @@ var expectations = expectationSet(map[string]expectation{
 		Message:    "",
 		NotMessage: "",
 		Condition: func(args *common.Args) bool {
-			return false
+			myType := args.TypeOf(0)
+			myValue := args.ValueOf(0)
+			return reflect.DeepEqual(myValue, reflect.Zero(myType))
 		},
 	},
 	"greater than": expectation{
 		Message:    "",
 		NotMessage: "",
 		Condition: func(args *common.Args) bool {
-			return false
+			myValue := args.Float64(0)
+			bound := args.Float64(1)
+			return myValue > bound
 		},
 	},
 	"less than": expectation{
 		Message:    "",
 		NotMessage: "",
 		Condition: func(args *common.Args) bool {
-			return false
+			myValue := args.Float64(0)
+			bound := args.Float64(1)
+			return myValue < bound
 		},
 	},
 	"within": expectation{
 		Message:    "",
 		NotMessage: "",
 		Condition: func(args *common.Args) bool {
-			return false
+			myValue := args.Float64(0)
+			low := args.Float64(1)
+			high := args.Float64(2)
+			return myValue > low && myValue < high
 		},
 	},
 	"has property": expectation{
