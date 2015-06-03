@@ -22,6 +22,16 @@ func SetLogToPanic() {
 	}
 }
 
+func SetLogToAggregate(errs *[]string) {
+	fail = func(err error) {
+		*errs = append(*errs, err.Error())
+	}
+}
+
+func Fail(err error) {
+	fail(err)
+}
+
 var fail func(err error)
 
 var expectations = expectationSet(map[string]expectation{

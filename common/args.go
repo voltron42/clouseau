@@ -80,39 +80,51 @@ func (a *Args) String(index int) string {
 func (a *Args) Byte(index int) byte {
 	return tribble.NewTribble(a.Get(index)).Byte()
 }
+
 func (a *Args) Float32(index int) float32 {
 	return tribble.NewTribble(a.Get(index)).Float32()
 }
+
 func (a *Args) Float64(index int) float64 {
 	return tribble.NewTribble(a.Get(index)).Float64()
 }
+
 func (a *Args) Int(index int) int {
 	return tribble.NewTribble(a.Get(index)).Int()
 }
+
 func (a *Args) Int8(index int) int8 {
 	return tribble.NewTribble(a.Get(index)).Int8()
 }
+
 func (a *Args) Int16(index int) int16 {
 	return tribble.NewTribble(a.Get(index)).Int16()
 }
+
 func (a *Args) Int32(index int) int32 {
 	return tribble.NewTribble(a.Get(index)).Int32()
 }
+
 func (a *Args) Int64(index int) int64 {
 	return tribble.NewTribble(a.Get(index)).Int64()
 }
+
 func (a *Args) UInt(index int) uint {
 	return tribble.NewTribble(a.Get(index)).UInt()
 }
+
 func (a *Args) UInt16(index int) uint16 {
 	return tribble.NewTribble(a.Get(index)).UInt16()
 }
+
 func (a *Args) UInt32(index int) uint32 {
 	return tribble.NewTribble(a.Get(index)).UInt32()
 }
+
 func (a *Args) UInt64(index int) uint64 {
 	return tribble.NewTribble(a.Get(index)).UInt64()
 }
+
 func (a *Args) UIntPtr(index int) uintptr {
 	return tribble.NewTribble(a.Get(index)).UIntPtr()
 }
