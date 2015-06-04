@@ -155,11 +155,6 @@ func (o *owner) getProp(fn, name string, values []interface{}) {
 	expectations.check("has deep property", o.state, params)
 }
 
-/*
-Key
-DeepProperty
-*/
-
 type length struct {
 	*numberCompare
 	Not *numberCompare

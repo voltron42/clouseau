@@ -2,8 +2,6 @@ package mockband
 
 import (
 	"../common"
-	"../reckon"
-	"errors"
 	"reflect"
 )
 
@@ -15,26 +13,25 @@ func NewMock() *Mock {
 	return &Mock{}
 }
 
-func (m *Mock) Called(name string, params ...interface{}) *Args {
+func (m *Mock) Called(name string, params ...interface{}) *common.Args {
 	call := m.getCall(name, params)
 	if call == nil {
-		reckon.Fail(errors.New("Function with param signature not found: " + name))
-		return nil
+		panic("Function with param signature not found: " + name)
 	} else {
-		args := Args(params)
+		args := common.Args(params)
 		return call.exec(&args)
 	}
 }
 
-func (m *Mock) CalledVarArg(name string, params ...interface{}) *Args {
+func (m *Mock) CalledVarArg(name string, params ...interface{}) *common.Args {
 	if len(params) == 0 {
 		return m.Called(name)
 	} else {
-		args := Args(params)
-		last := reflect.ValueOf(args.popLast())
-		err := args.addAll(last)
+		args := common.Args(params)
+		last := reflect.ValueOf(args.PopLast())
+		err := args.AddAll(last)
 		if err != nil {
-			args.add(last)
+			args.Add(last)
 		}
 		return m.Called(name, args...)
 	}
@@ -52,17 +49,17 @@ func (m *Mock) When(name string, params ...interface{}) *call {
 func (m *Mock) GetCall(name string, params ...interface{}) *results {
 	call := m.getCall(name, params)
 	if call == nil {
-		reckon.Fail(errors.New("Function not found: " + name))
+		panic("Function not found: " + name)
 	}
-	return &metric{call.results.count()}
+	return &call.results
 }
 
 func (m *Mock) HasCalled(name string, params ...interface{}) *metric {
 	call := m.getCall(name, params)
 	if call == nil {
-		reckon.Fail(errors.New("Function not found: " + name))
+		panic("Function not found: " + name)
 	}
-	return &call.results
+	return &metric{call.results.count()}
 }
 
 func (m *Mock) getCall(name string, params ...interface{}) *call {
@@ -93,11 +90,11 @@ type results struct {
 	list []result
 }
 
-func (r *results) GetResults(index int) *Args {
+func (r *results) GetResults(index int) *common.Args {
 	return r.list[index].results
 }
 
-func (r *results) GetParams(index int) *Args {
+func (r *results) GetParams(index int) *common.Args {
 	return r.list[index].params
 }
 
@@ -110,17 +107,17 @@ func (r *results) count() int {
 }
 
 type result struct {
-	params  *Args
-	results *Args
+	params  *common.Args
+	results *common.Args
 }
 
 type call struct {
-	list    []func(args *Args) *Args
+	list    []func(args *common.Args) *common.Args
 	index   int
 	results results
 }
 
-func (c *call) exec(args *Args) *Args {
+func (c *call) exec(args *common.Args) *common.Args {
 	out := c.list[c.index](args)
 	c.results.add(result{
 		params:  args,
@@ -131,43 +128,43 @@ func (c *call) exec(args *Args) *Args {
 }
 
 func (c *call) Return(params ...interface{}) *call {
-	return c.Then(func(args *Args) *Args {
-		out := Args(params)
+	return c.Then(func(args *common.Args) *common.Args {
+		out := common.Args(params)
 		return &out
 	})
 }
 
 func (c *call) Inject(value interface{}, index int, params ...interface{}) *call {
-	return c.Then(func(args *Args) *Args {
+	return c.Then(func(args *common.Args) *common.Args {
 		pointer := reflect.ValueOf((*args)[index])
 		pointer.Elem().Set(reflect.ValueOf(value))
-		out := Args(params)
+		out := common.Args(params)
 		return &out
 	})
 }
 
 func (c *call) Panic(err interface{}) *call {
-	return c.Then(func(args *Args) *Args {
+	return c.Then(func(args *common.Args) *common.Args {
 		panic(err)
 	})
 }
 
-func (c *call) Then(fn func(args *Args) *Args) *call {
+func (c *call) Then(fn func(args *common.Args) *common.Args) *call {
 	c.list = append(c.list, fn)
 	return c
 }
 
 type callList struct {
 	list []struct {
-		params Args
+		params common.Args
 		call   *call
 	}
 }
 
 func (c *callList) getCall(params []interface{}) *call {
 	for _, item := range c.list {
-		args := Args(params)
-		if item.params.matches(&args) {
+		args := common.Args(params)
+		if item.params.Matches(&args) {
 			return item.call
 		}
 	}
@@ -181,10 +178,10 @@ func (c *callList) createCall(params []interface{}) *call {
 	}
 	me = &call{}
 	c.list = append(c.list, struct {
-		params Args
+		params common.Args
 		call   *call
 	}{
-		params: Args(params),
+		params: common.Args(params),
 		call:   me,
 	})
 	return me

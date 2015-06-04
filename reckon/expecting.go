@@ -2,43 +2,18 @@ package reckon
 
 import (
 	"../common"
-	"errors"
 	"fmt"
 	"reflect"
 	"regexp"
 	"strings"
-	"testing"
 )
 
-func SetLog(t *testing.T) {
-	fail = func(err error) {
-		t.Fatal(err)
-	}
-}
-
-func SetLogToPanic() {
-	fail = func(err error) {
-		panic(err)
-	}
-}
-
-func SetLogToAggregate(errs *[]string) {
-	fail = func(err error) {
-		*errs = append(*errs, err.Error())
-	}
-}
-
-func Fail(err error) {
-	fail(err)
-}
-
-var fail func(err error)
-
 var expectations = expectationSet(map[string]expectation{
-	"equal": expectation{
+	"equals": expectation{
 		Message:    "Items not equal:\n\tActual: %v\n\tExpected: %v\n",
 		NotMessage: "Items equal:\n\tActual: %v\n\tExpected: %v\n",
 		Condition: func(args *common.Args) bool {
+			fmt.Println("equal")
 			return reflect.DeepEqual(args.Get(0), args.Get(1))
 		},
 	},
@@ -199,9 +174,13 @@ var expectations = expectationSet(map[string]expectation{
 type expectationSet map[string]expectation
 
 func (e expectationSet) check(name string, state bool, params ...interface{}) {
+	fmt.Println("checking " + name)
 	exp, ok := e[name]
 	if ok {
+		fmt.Println("running check")
 		exp.check(state, params)
+	} else {
+		fmt.Println("falling down")
 	}
 }
 
@@ -211,35 +190,20 @@ type expectation struct {
 	Condition  func(args *common.Args) bool
 }
 
-func (e *expectation) checkBase(state bool, message string, params ...interface{}) {
-	defer failPanic()
+func (e *expectation) checkBase(state bool, message string, params []interface{}) {
 	args := common.Args(params)
-	if e.Condition(&args) {
-		fail(errors.New(fmt.Sprintf(message, params...)))
+	if state != e.Condition(&args) {
+		panic(fmt.Sprintf(message, params...))
 	}
 }
 
-func (e *expectation) check(state bool, params ...interface{}) {
+func (e *expectation) check(state bool, params []interface{}) {
 	message := ""
 	if state {
 		message = e.Message
 	} else {
 		message = e.NotMessage
 	}
+	fmt.Println(message)
 	e.checkBase(state, message, params)
-}
-
-func failPanic() {
-	r := recover()
-	if r != nil {
-		switch r.(type) {
-		case string:
-			fail(errors.New(fmt.Sprintf("%v", r)))
-		case error:
-			err, _ := r.(error)
-			fail(err)
-		default:
-			fail(errors.New(fmt.Sprintf("unknown error: %v", r)))
-		}
-	}
 }

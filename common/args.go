@@ -15,14 +15,14 @@ var any interface{} = struct{}{}
 
 type Args []interface{}
 
-func (a *Args) popLast() interface{} {
+func (a *Args) PopLast() interface{} {
 	size := len(*a)
 	last := (*a)[size-1]
 	*a = (*a)[:size-2]
 	return last
 }
 
-func (a *Args) addAll(value reflect.Value) error {
+func (a *Args) AddAll(value reflect.Value) error {
 	if value.Kind() != reflect.Slice && value.Kind() != reflect.Array {
 		return errors.New("not slice or array")
 	}
@@ -33,11 +33,11 @@ func (a *Args) addAll(value reflect.Value) error {
 	return nil
 }
 
-func (a *Args) add(value reflect.Value) {
+func (a *Args) Add(value reflect.Value) {
 	*a = append(*a, value.Interface())
 }
 
-func (a *Args) matches(args *Args) bool {
+func (a *Args) Matches(args *Args) bool {
 	if len(*args) > len(*a) {
 		return false
 	}

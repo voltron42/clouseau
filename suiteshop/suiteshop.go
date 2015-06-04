@@ -1,9 +1,8 @@
 package suiteshop
 
 import (
-	"../reckon"
-	"errors"
 	"fmt"
+	"strings"
 )
 
 type Suite struct {
@@ -13,62 +12,83 @@ type Suite struct {
 	beforeAll []dependency
 	afterAll  []dependency
 	tests     []test
+	suites    []Suite
 }
 
-func (s *Suite) Before(fn func()) {
-	s.before = append(s.before, dependency(fn))
-}
-
-func (s *Suite) BeforeAll(fn func()) {
-	s.beforeAll = append(s.beforeAll, dependency(fn))
-}
-
-func (s *Suite) After(fn func()) {
-	s.after = append(s.after, dependency(fn))
-}
-
-func (s *Suite) AfterAll(fn func()) {
-	s.afterAll = append(s.afterAll, dependency(fn))
-}
-
-func (s *Suite) Test(label string, fn func()) {
-	s.tests = append(s.tests, test{label, fn})
-}
-
-func Describe(label string, core func(suite *Suite)) *log {
-	l := &log{&[]string{}}
-	s := &Suite{
+func newSuite(label string) *Suite {
+	return &Suite{
 		label,
 		[]dependency{},
 		[]dependency{},
 		[]dependency{},
 		[]dependency{},
 		[]test{},
+		[]Suite{},
 	}
-	core(s)
+}
+
+func (s *Suite) Before(fn func(log *Log)) {
+	s.before = append(s.before, dependency(fn))
+}
+
+func (s *Suite) BeforeAll(fn func(log *Log)) {
+	s.beforeAll = append(s.beforeAll, dependency(fn))
+}
+
+func (s *Suite) After(fn func(log *Log)) {
+	s.after = append(s.after, dependency(fn))
+}
+
+func (s *Suite) AfterAll(fn func(log *Log)) {
+	s.afterAll = append(s.afterAll, dependency(fn))
+}
+
+func (s *Suite) Test(label string, fn func(log *Log)) {
+	s.tests = append(s.tests, test{label, fn})
+}
+
+func (s *Suite) Describe(label string, core func(suite *Suite)) {
+	s2 := newSuite(label)
+	core(s2)
+	s.suites = append(s.suites, *s2)
+}
+
+func (s *Suite) run(log *Log, labels ...string) {
+	allLabels := append(labels, s.label)
+	label := strings.Join(allLabels, " - ")
 	for _, b := range s.beforeAll {
-		b.runSafe(s.label)
+		b.runSafe(label, log)
 	}
 	for _, test := range s.tests {
 		for _, before := range s.before {
-			before.runSafe(s.label)
+			before.runSafe(label, log)
 		}
-		test.run(s.label)
+		test.run(label, log)
 		for _, after := range s.after {
-			after.runSafe(s.label)
+			after.runSafe(label, log)
 		}
+	}
+	for _, suite := range s.suites {
+		suite.run(log, allLabels...)
 	}
 	for _, a := range s.afterAll {
-		a.runSafe(s.label)
+		a.runSafe(label, log)
 	}
-	return l
 }
 
-type dependency func()
+func Describe(label string, core func(suite *Suite)) *Log {
+	s := newSuite(label)
+	core(s)
+	log := newLog()
+	s.run(log)
+	return log
+}
 
-func (d dependency) runSafe(label string) {
-	defer failPanic(label)
-	d()
+type dependency func(log *Log)
+
+func (d dependency) runSafe(label string, log *Log) {
+	defer failPanic(label, log)
+	d(log)
 }
 
 type test struct {
@@ -76,25 +96,56 @@ type test struct {
 	fn    dependency
 }
 
-func (t test) run(label string) {
-	t.fn.runSafe(label + " - " + t.label)
+func (t test) run(label string, log *Log) {
+	testName := label + " - " + t.label
+	log.append(fmt.Sprintf("\x1b[42;37;1m%v\x1b[0m", testName))
+	t.fn.runSafe(testName, log)
+	log.append("")
 }
 
-func failPanic(label string) {
+func failPanic(label string, log *Log) {
 	r := recover()
 	if r != nil {
 		switch r.(type) {
 		case string:
-			reckon.Fail(errors.New(fmt.Sprintf("%v -- %v", label, r)))
+			log.append(fmt.Sprintf("\x1b[41;37;1m%v -- %v\x1b[0m", label, r))
 		case error:
 			err, _ := r.(error)
-			reckon.Fail(errors.New(fmt.Sprintf("%v -- %v", label, err.Error())))
+			log.append(fmt.Sprintf("\x1b[41;37;1m%v -- %v\x1b[0m", label, err.Error()))
 		default:
-			reckon.Fail(errors.New(fmt.Sprintf("%v -- unknown error: %v", label, r)))
+			log.append(fmt.Sprintf("\x1b[41;37;1m%v -- unknown error: %v\x1b[0m", label, r))
 		}
 	}
 }
 
-type log struct {
-	messages *[]string
+type Log struct {
+	hasErrors bool
+	messages  []string
+	info      []string
+}
+
+func newLog() *Log {
+	return &Log{false, []string{}, []string{}}
+}
+
+func (l *Log) Info(message string) {
+	l.info = append(l.info, message)
+}
+
+func (l *Log) append(message string) {
+	l.hasErrors = true
+	l.messages = append(l.messages, message)
+}
+
+func (log *Log) Post(fn func(message string)) bool {
+	fn("")
+	for _, message := range log.info {
+		fn(message)
+	}
+	fn("")
+	for _, message := range log.messages {
+		fn(message)
+	}
+	fn("")
+	return log.hasErrors
 }
