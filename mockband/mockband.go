@@ -6,11 +6,11 @@ import (
 )
 
 type Mock struct {
-	calls map[string]callList
+	calls map[string]*callList
 }
 
 func NewMock() *Mock {
-	return &Mock{}
+	return &Mock{map[string]*callList{}}
 }
 
 func (m *Mock) Called(name string, params ...interface{}) *common.Args {
@@ -40,13 +40,13 @@ func (m *Mock) CalledVarArg(name string, params ...interface{}) *common.Args {
 func (m *Mock) When(name string, params ...interface{}) *call {
 	list, ok := m.calls[name]
 	if !ok {
-		list = callList{}
+		list = &callList{}
 		m.calls[name] = list
 	}
 	return list.createCall(params)
 }
 
-func (m *Mock) GetCall(name string, params ...interface{}) *results {
+func (m *Mock) GetCalls(name string, params ...interface{}) *results {
 	call := m.getCall(name, params)
 	if call == nil {
 		panic("Function not found: " + name)
@@ -62,7 +62,7 @@ func (m *Mock) HasCalled(name string, params ...interface{}) *metric {
 	return &metric{call.results.count()}
 }
 
-func (m *Mock) getCall(name string, params ...interface{}) *call {
+func (m *Mock) getCall(name string, params []interface{}) *call {
 	list, ok := m.calls[name]
 	if !ok {
 		return nil
@@ -117,6 +117,14 @@ type call struct {
 	results results
 }
 
+func newCall() *call {
+	return &call{
+		[]func(args *common.Args) *common.Args{},
+		0,
+		results{},
+	}
+}
+
 func (c *call) exec(args *common.Args) *common.Args {
 	out := c.list[c.index](args)
 	c.results.add(result{
@@ -154,11 +162,13 @@ func (c *call) Then(fn func(args *common.Args) *common.Args) *call {
 	return c
 }
 
+type callListItem struct {
+	params common.Args
+	call   *call
+}
+
 type callList struct {
-	list []struct {
-		params common.Args
-		call   *call
-	}
+	list []callListItem
 }
 
 func (c *callList) getCall(params []interface{}) *call {
@@ -176,11 +186,8 @@ func (c *callList) createCall(params []interface{}) *call {
 	if me != nil {
 		return me
 	}
-	me = &call{}
-	c.list = append(c.list, struct {
-		params common.Args
-		call   *call
-	}{
+	me = newCall()
+	c.list = append(c.list, callListItem{
 		params: common.Args(params),
 		call:   me,
 	})

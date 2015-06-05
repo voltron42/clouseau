@@ -12,8 +12,8 @@ var expectations = expectationSet(map[string]expectation{
 	"equals": expectation{
 		Message:    "Items not equal:\n\tActual: %v\n\tExpected: %v\n",
 		NotMessage: "Items equal:\n\tActual: %v\n\tExpected: %v\n",
+		Params:     []int{0, 1},
 		Condition: func(args *common.Args) bool {
-			fmt.Println("equal")
 			return reflect.DeepEqual(args.Get(0), args.Get(1))
 		},
 	},
@@ -23,6 +23,32 @@ var expectations = expectationSet(map[string]expectation{
 		Condition: func(args *common.Args) bool {
 			actual := args.ValueOf(0)
 			return !actual.IsNil() && actual.IsValid()
+		},
+	},
+	"panics": expectation{
+		Message:    "Has not panicked",
+		NotMessage: "Has panicked",
+		Condition: func(args *common.Args) bool {
+			fn := args.ValueOf(0)
+			err := ""
+			safeCall(fn, &err)
+			if len(err) == 0 {
+				return false
+			}
+			return true
+		},
+	},
+	"panics with message": expectation{
+		Message:    "Has panicked with correct message",
+		NotMessage: "Has panicked with incorrect message",
+		Condition: func(args *common.Args) bool {
+			fn := args.ValueOf(0)
+			err := ""
+			safeCall(fn, &err)
+			if len(err) == 0 {
+				panic("Has not panicked")
+			}
+			return reflect.DeepEqual(err, args.Get(1))
 		},
 	},
 	"matches": expectation{
@@ -171,30 +197,58 @@ var expectations = expectationSet(map[string]expectation{
 	},
 })
 
+func safeCall(fn reflect.Value, err interface{}) {
+	defer func() {
+		out := reflect.ValueOf(err).Elem()
+		if r := recover(); r != nil {
+			fmt.Println(r)
+			switch r.(type) {
+			case string:
+				out.Set(reflect.ValueOf(fmt.Sprintf("%v", r)))
+			case error:
+				er, ok := r.(error)
+				if !ok {
+					out.Set(reflect.ValueOf(fmt.Sprintf("unknown error: %v", r)))
+				} else {
+					out.Set(reflect.ValueOf(er.Error()))
+				}
+			default:
+				out.Set(reflect.ValueOf(fmt.Sprintf("unknown error: %v", r)))
+			}
+		}
+	}()
+	fn.Call([]reflect.Value{})
+}
+
 type expectationSet map[string]expectation
 
 func (e expectationSet) check(name string, state bool, params ...interface{}) {
-	fmt.Println("checking " + name)
 	exp, ok := e[name]
 	if ok {
-		fmt.Println("running check")
 		exp.check(state, params)
-	} else {
-		fmt.Println("falling down")
 	}
 }
 
 type expectation struct {
 	Message    string
 	NotMessage string
+	Params     []int
 	Condition  func(args *common.Args) bool
 }
 
 func (e *expectation) checkBase(state bool, message string, params []interface{}) {
 	args := common.Args(params)
 	if state != e.Condition(&args) {
-		panic(fmt.Sprintf(message, params...))
+		panic(e.buildMessage(message, params))
 	}
+}
+
+func (e *expectation) buildMessage(message string, params []interface{}) string {
+	args := []interface{}{}
+	for _, index := range e.Params {
+		args = append(args, params[index])
+	}
+	return fmt.Sprintf(message, args...)
 }
 
 func (e *expectation) check(state bool, params []interface{}) {
@@ -204,6 +258,5 @@ func (e *expectation) check(state bool, params []interface{}) {
 	} else {
 		message = e.NotMessage
 	}
-	fmt.Println(message)
 	e.checkBase(state, message, params)
 }

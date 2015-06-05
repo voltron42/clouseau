@@ -77,6 +77,14 @@ func (a *Args) String(index int) string {
 	return fmt.Sprintf("%v", a.Get(index))
 }
 
+func (a *Args) Error(index int) error {
+	err, ok := a.Get(index).(error)
+	if !ok {
+		panic(fmt.Sprintf("Arg %v cannot be cast to error.", index))
+	}
+	return err
+}
+
 func (a *Args) Byte(index int) byte {
 	return tribble.NewTribble(a.Get(index)).Byte()
 }

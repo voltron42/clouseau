@@ -9,6 +9,7 @@ func That(actual interface{}) *reckoning {
 		newIs(actual),
 		newDoes(actual),
 		newHas(actual),
+		newWill(actual),
 	}
 }
 
@@ -16,6 +17,7 @@ type reckoning struct {
 	Is   *is
 	Does *does
 	Has  *has
+	Will *will
 }
 
 type does struct {
@@ -152,7 +154,7 @@ func (o *owner) getProp(fn, name string, values []interface{}) {
 	for _, value := range values {
 		params = append(params, value)
 	}
-	expectations.check("has deep property", o.state, params)
+	expectations.check("has deep property", o.state, params...)
 }
 
 type length struct {
@@ -185,5 +187,30 @@ func (l *listing) getList(fn string, names []string) {
 	for _, name := range names {
 		params = append(params, name)
 	}
-	expectations.check(fn, true, params)
+	expectations.check(fn, true, params...)
+}
+
+type will struct {
+	*panicCheck
+	Not *panicCheck
+}
+
+func newWill(actual interface{}) *will {
+	return &will{
+		panicCheck: &panicCheck{actual, true},
+		Not:        &panicCheck{actual, false},
+	}
+}
+
+type panicCheck struct {
+	actual interface{}
+	state  bool
+}
+
+func (p *panicCheck) Panic() {
+	expectations.check("panics", p.state, p.actual)
+}
+
+func (p *panicCheck) PanicWith(message interface{}) {
+	expectations.check("panics with message", p.state, p.actual, message)
 }
