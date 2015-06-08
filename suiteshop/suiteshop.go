@@ -2,6 +2,7 @@ package suiteshop
 
 import (
 	"fmt"
+	"runtime/debug"
 	"strings"
 )
 
@@ -115,6 +116,10 @@ func failPanic(label string, log *Log) {
 		default:
 			log.append(fmt.Sprintf("\x1b[41;37;1m%v -- unknown error: %v\x1b[0m", label, r))
 		}
+		stack := string(debug.Stack())
+		stack = strings.Join(strings.Split(stack, "\n"), "\n\n")
+		stack = strings.Join(strings.Split(stack, "\n\n\t"), "\n\t")
+		log.append(fmt.Sprintf("\n\x1b[41;37;1m%v\x1b[0m", stack))
 	}
 }
 
