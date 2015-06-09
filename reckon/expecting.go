@@ -10,8 +10,8 @@ import (
 
 var expectations = expectationSet(map[string]expectation{
 	"equals": expectation{
-		Message:    "Items not equal:\n\tActual: %v\n\tExpected: %v\n",
-		NotMessage: "Items equal:\n\tActual: %v\n\tExpected: %v\n",
+		Message:    "Items not equal:\n\tActual: %v\n\tExpected: %v",
+		NotMessage: "Items equal:\n\tActual: %v\n\tExpected: %v",
 		Params:     []int{0, 1},
 		Condition: func(args *common.Args) bool {
 			return reflect.DeepEqual(args.Get(0), args.Get(1))
@@ -201,7 +201,6 @@ func safeCall(fn reflect.Value, err interface{}) {
 	defer func() {
 		out := reflect.ValueOf(err).Elem()
 		if r := recover(); r != nil {
-			fmt.Println(r)
 			switch r.(type) {
 			case string:
 				out.Set(reflect.ValueOf(fmt.Sprintf("%v", r)))
