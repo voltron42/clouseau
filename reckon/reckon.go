@@ -58,8 +58,8 @@ type is struct {
 
 func newIs(actual interface{}) *is {
 	return &is{
-		objCompare: &objCompare{actual: actual, state: true},
-		Not:        &objCompare{actual: actual, state: false},
+		objCompare: &objCompare{numberCompare: &numberCompare{actual, true}, actual: actual, state: true},
+		Not:        &objCompare{numberCompare: &numberCompare{actual, false}, actual: actual, state: false},
 	}
 }
 

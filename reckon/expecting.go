@@ -18,8 +18,8 @@ var expectations = expectationSet(map[string]expectation{
 		},
 	},
 	"exists": expectation{
-		Message:    "",
-		NotMessage: "",
+		Message:    "Does not exist",
+		NotMessage: "Does exist",
 		Condition: func(args *common.Args) bool {
 			actual := args.ValueOf(0)
 			return !actual.IsNil() && actual.IsValid()
@@ -39,8 +39,8 @@ var expectations = expectationSet(map[string]expectation{
 		},
 	},
 	"panics with message": expectation{
-		Message:    "Has panicked with correct message",
-		NotMessage: "Has panicked with incorrect message",
+		Message:    "Has panicked with incorrect message",
+		NotMessage: "Has panicked with correct message",
 		Condition: func(args *common.Args) bool {
 			fn := args.ValueOf(0)
 			err := ""
@@ -52,8 +52,8 @@ var expectations = expectationSet(map[string]expectation{
 		},
 	},
 	"matches": expectation{
-		Message:    "",
-		NotMessage: "",
+		Message:    "Does not match string",
+		NotMessage: "Does match string",
 		Condition: func(args *common.Args) bool {
 			actual := args.String(0)
 			regex := args.String(1)
@@ -62,8 +62,8 @@ var expectations = expectationSet(map[string]expectation{
 		},
 	},
 	"contains": expectation{
-		Message:    "",
-		NotMessage: "",
+		Message:    "Does not contain string",
+		NotMessage: "Does contain string",
 		Condition: func(args *common.Args) bool {
 			actual := args.String(0)
 			needle := args.String(1)
@@ -71,31 +71,32 @@ var expectations = expectationSet(map[string]expectation{
 		},
 	},
 	"is a": expectation{
-		Message:    "",
-		NotMessage: "",
+		Message:    "Is not kind of",
+		NotMessage: "Is kind of",
 		Condition: func(args *common.Args) bool {
-			return reflect.DeepEqual(args.ValueOf(0).Kind(), args.Get(1))
+			return args.ValueOf(0).Kind() == args.Get(1)
 		},
 	},
 	"instance of": expectation{
-		Message:    "",
-		NotMessage: "",
+		Message:    "Is not an instance of",
+		NotMessage: "Is an instance of",
 		Condition: func(args *common.Args) bool {
 			return reflect.DeepEqual(args.ValueOf(0).Type(), args.Get(1))
 		},
 	},
 	"is zero": expectation{
-		Message:    "",
-		NotMessage: "",
+		Message:    "Is not the zero value for type",
+		NotMessage: "Is the zero value for type",
 		Condition: func(args *common.Args) bool {
 			myType := args.TypeOf(0)
 			myValue := args.ValueOf(0)
-			return reflect.DeepEqual(myValue, reflect.Zero(myType))
+			zeroValue := reflect.Zero(myType)
+			return reflect.DeepEqual(myValue.Interface(), zeroValue.Interface())
 		},
 	},
 	"greater than": expectation{
-		Message:    "",
-		NotMessage: "",
+		Message:    "Is not greater than",
+		NotMessage: "Is greater than",
 		Condition: func(args *common.Args) bool {
 			myValue := args.Float64(0)
 			bound := args.Float64(1)
@@ -103,8 +104,8 @@ var expectations = expectationSet(map[string]expectation{
 		},
 	},
 	"less than": expectation{
-		Message:    "",
-		NotMessage: "",
+		Message:    "Is not less than",
+		NotMessage: "Is less than",
 		Condition: func(args *common.Args) bool {
 			myValue := args.Float64(0)
 			bound := args.Float64(1)
@@ -112,8 +113,8 @@ var expectations = expectationSet(map[string]expectation{
 		},
 	},
 	"within": expectation{
-		Message:    "",
-		NotMessage: "",
+		Message:    "Is not within",
+		NotMessage: "Is within",
 		Condition: func(args *common.Args) bool {
 			myValue := args.Float64(0)
 			low := args.Float64(1)

@@ -144,6 +144,18 @@ func Test(t *testing.T) {
 				reckon.That(list[7]).Is.EqualTo("lazy")
 				reckon.That(list[8]).Is.EqualTo("dog.")
 			})
+			suite.Test("Fail", func(log *suiteshop.Log) {
+				args := &common.Args{}
+				reckon.That(func() {
+					args.Bytes(0)
+				}).Will.PanicWith("Cannot be cast to byte array.")
+				reckon.That(func() {
+					args.Error(0)
+				}).Will.PanicWith("Cannot be cast to error.")
+				reckon.That(func() {
+					args.Strings(0)
+				}).Will.PanicWith("Cannot be cast to string array.")
+			})
 		})
 	}).Post(func(message string) {
 		list = append(list, message)
