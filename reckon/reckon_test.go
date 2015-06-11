@@ -259,6 +259,162 @@ func Test(t *testing.T) {
 				})
 			})
 		})
+		suite.Describe("Has", func(suite *suiteshop.Suite) {
+			suite.Describe("Any", func(suite *suiteshop.Suite) {
+				suite.Describe("Keys", func(suite *suiteshop.Suite) {
+					suite.Test("does", func(log *suiteshop.Log) {
+						reckon.That(map[string]int{
+							"a": 1,
+							"b": 2,
+							"c": 3,
+						}).Has.Any.Keys("c", "d")
+					})
+					suite.Test("does not", func(log *suiteshop.Log) {
+						reckon.That(func() {
+							reckon.That(map[string]int{
+								"a": 1,
+								"b": 2,
+								"c": 3,
+							}).Has.Any.Keys("d")
+						}).Will.PanicWith("Does not have keys")
+					})
+				})
+				suite.Describe("Properties", func(suite *suiteshop.Suite) {
+					suite.Test("does", func(log *suiteshop.Log) {
+						reckon.That(struct {
+							a int
+							b int
+							c int
+						}{
+							a: 1,
+							b: 2,
+							c: 3,
+						}).Has.Any.Properties("c", "d")
+					})
+					suite.Test("does not", func(log *suiteshop.Log) {
+						reckon.That(func() {
+							reckon.That(struct {
+								a int
+								b int
+								c int
+							}{
+								a: 1,
+								b: 2,
+								c: 3,
+							}).Has.Any.Properties("d")
+						}).Will.PanicWith("Does not have properties")
+					})
+				})
+			})
+			suite.Describe("All", func(suite *suiteshop.Suite) {
+				suite.Describe("Keys", func(suite *suiteshop.Suite) {
+					suite.Test("does", func(log *suiteshop.Log) {
+						reckon.That(map[string]int{
+							"a": 1,
+							"b": 2,
+							"c": 3,
+						}).Has.All.Keys("c", "b")
+					})
+					suite.Test("does not", func(log *suiteshop.Log) {
+						reckon.That(func() {
+							reckon.That(map[string]int{
+								"a": 1,
+								"b": 2,
+								"c": 3,
+							}).Has.All.Keys("c", "d")
+						}).Will.PanicWith("Does not have keys")
+					})
+				})
+				suite.Describe("Properties", func(suite *suiteshop.Suite) {
+					suite.Test("does", func(log *suiteshop.Log) {
+						reckon.That(struct {
+							a int
+							b int
+							c int
+						}{
+							a: 1,
+							b: 2,
+							c: 3,
+						}).Has.All.Properties("c", "b")
+					})
+					suite.Test("does not", func(log *suiteshop.Log) {
+						reckon.That(func() {
+							reckon.That(struct {
+								a int
+								b int
+								c int
+							}{
+								a: 1,
+								b: 2,
+								c: 3,
+							}).Has.All.Properties("c", "d")
+						}).Will.PanicWith("Does not have properties")
+					})
+				})
+			})
+			suite.Describe("Length", func(suite *suiteshop.Suite) {
+				suite.Describe("Greater Than", func(suite *suiteshop.Suite) {
+					suite.Test("is", func(log *suiteshop.Log) {
+						reckon.That([]int{1, 2}).Has.Length.GreaterThan(1)
+					})
+					suite.Test("is not", func(log *suiteshop.Log) {
+						reckon.That(func() {
+							reckon.That([]int{1, 2}).Has.Length.GreaterThan(5)
+						}).Will.Panic()
+					})
+				})
+				suite.Describe("Not Greater Than", func(suite *suiteshop.Suite) {
+					suite.Test("is", func(log *suiteshop.Log) {
+						reckon.That([]int{1, 2, 3, 4}).Has.Length.Not.GreaterThan(4)
+					})
+					suite.Test("is not", func(log *suiteshop.Log) {
+						reckon.That(func() {
+							reckon.That([]int{1, 2, 3}).Has.Length.Not.GreaterThan(2)
+						}).Will.Panic()
+					})
+				})
+				suite.Describe("Less Than", func(suite *suiteshop.Suite) {
+					suite.Test("is", func(log *suiteshop.Log) {
+						reckon.That([]int{1, 2}).Has.Length.LessThan(3)
+					})
+					suite.Test("is not", func(log *suiteshop.Log) {
+						reckon.That(func() {
+							reckon.That([]int{1, 2, 3}).Has.Length.LessThan(2)
+						}).Will.Panic()
+					})
+				})
+				suite.Describe("Not Less Than", func(suite *suiteshop.Suite) {
+					suite.Test("is", func(log *suiteshop.Log) {
+						reckon.That([]int{1, 2}).Has.Length.Not.LessThan(2)
+					})
+					suite.Test("is not", func(log *suiteshop.Log) {
+						reckon.That(func() {
+							reckon.That([]int{1, 2}).Has.Length.Not.LessThan(6)
+						}).Will.Panic()
+					})
+				})
+				suite.Describe("Within", func(suite *suiteshop.Suite) {
+					suite.Test("is", func(log *suiteshop.Log) {
+						reckon.That([]int{1, 2, 3, 4}).Has.Length.Within(3, 5)
+					})
+					suite.Test("is not", func(log *suiteshop.Log) {
+						reckon.That(func() {
+							reckon.That([]int{1, 2}).Has.Length.Within(3, 4)
+						}).Will.Panic()
+					})
+				})
+				suite.Describe("Not Within", func(suite *suiteshop.Suite) {
+					suite.Test("is", func(log *suiteshop.Log) {
+						reckon.That([]int{1, 2}).Has.Length.Not.Within(3, 3)
+					})
+					suite.Test("is not", func(log *suiteshop.Log) {
+						reckon.That(func() {
+							reckon.That([]int{1, 2, 3, 4}).Has.Length.Not.Within(3, 6)
+						}).Will.Panic()
+					})
+				})
+			})
+		})
 	}).Post(fn) {
 		t.Fatal(strings.Join(list, "\n"))
 	} else {

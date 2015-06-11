@@ -163,9 +163,14 @@ type length struct {
 }
 
 func newLength(actual interface{}) *length {
+	temp := actual
+	value := reflect.ValueOf(actual)
+	if value.Kind() == reflect.Slice || value.Kind() == reflect.Array {
+		temp = value.Len()
+	}
 	return &length{
-		numberCompare: &numberCompare{actual, true},
-		Not:           &numberCompare{actual, false},
+		numberCompare: &numberCompare{temp, true},
+		Not:           &numberCompare{temp, false},
 	}
 }
 

@@ -2,6 +2,7 @@ package mockband
 
 import (
 	"../common"
+	"fmt"
 	"reflect"
 )
 
@@ -98,6 +99,10 @@ func (r *results) GetParams(index int) *common.Args {
 	return r.list[index].params
 }
 
+func (r *results) GetError(index int) *string {
+	return r.list[index].message
+}
+
 func (r *results) add(result result) {
 	r.list = append(r.list, result)
 }
@@ -109,6 +114,7 @@ func (r *results) count() int {
 type result struct {
 	params  *common.Args
 	results *common.Args
+	message *string
 }
 
 type call struct {
@@ -126,13 +132,40 @@ func newCall() *call {
 }
 
 func (c *call) exec(args *common.Args) *common.Args {
-	out := c.list[c.index](args)
+	message := ""
+	out := &common.Args{}
+	c.execSafe(args, out, &message)
 	c.results.add(result{
 		params:  args,
 		results: out,
+		message: &message,
 	})
 	c.index = (c.index + 1) % len(c.list)
+	if len(message) > 0 {
+		panic(message)
+	}
 	return out
+}
+func (c *call) execSafe(in, out *common.Args, message *string) {
+	defer func() {
+		if r := recover(); r != nil {
+			switch r.(type) {
+			case error:
+				err, ok := r.(error)
+				if !ok {
+					panic("error not error -- should not reach")
+				}
+				*message = err.Error()
+			case string:
+				*message = fmt.Sprintf("%v", r)
+			default:
+				*message = fmt.Sprintf("unknown error: %v", r)
+			}
+		}
+	}()
+	fn := c.list[c.index]
+	temp := fn(in)
+	*out = *temp
 }
 
 func (c *call) Return(params ...interface{}) *call {

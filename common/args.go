@@ -18,7 +18,7 @@ type Args []interface{}
 func (a *Args) PopLast() interface{} {
 	size := len(*a)
 	last := (*a)[size-1]
-	*a = (*a)[:size-2]
+	*a = (*a)[:size-1]
 	return last
 }
 

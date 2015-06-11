@@ -29,6 +29,13 @@ func Test(t *testing.T) {
 			reckon.That(*args).Is.EqualTo(common.Args([]interface{}{1, 2, 3}))
 			reckon.That(args.Len()).Is.EqualTo(3)
 		})
+		suite.Test("PopLast", func(log *suiteshop.Log) {
+			args := &common.Args{1, 2}
+			last := args.PopLast()
+			reckon.That(last).Is.EqualTo(2)
+			reckon.That(args.Len()).Is.EqualTo(1)
+			reckon.That(args.Get(0)).Is.EqualTo(1)
+		})
 		suite.Test("Get", func(log *suiteshop.Log) {
 			obj := struct {
 				a string
@@ -146,24 +153,20 @@ func Test(t *testing.T) {
 			})
 			suite.Test("Fail", func(log *suiteshop.Log) {
 				args := &common.Args{}
+				reckon.That(args.Bytes(0)).Is.Zero()
+				reckon.That(args.Error(0)).Is.Nil()
+				reckon.That(args.Strings(0)).Is.Zero()
 				reckon.That(func() {
-					args.Bytes(0)
-				}).Will.PanicWith("Cannot be cast to byte array.")
-				reckon.That(func() {
-					args.Error(0)
-				}).Will.PanicWith("Cannot be cast to error.")
-				reckon.That(func() {
-					args.Strings(0)
-				}).Will.PanicWith("Cannot be cast to string array.")
+					args.Bool(0)
+				}).Will.Panic()
 			})
 		})
 	}).Post(func(message string) {
 		list = append(list, message)
 	})
-
 	if hasErrors {
-		fmt.Println(strings.Join(list, "\n"))
-	} else {
 		t.Fatal(strings.Join(list, "\n"))
+	} else {
+		fmt.Println(strings.Join(list, "\n"))
 	}
 }

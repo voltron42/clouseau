@@ -144,8 +144,8 @@ var expectations = expectationSet(map[string]expectation{
 		},
 	},
 	"has keys": expectation{
-		Message:    "",
-		NotMessage: "",
+		Message:    "Does not have keys",
+		NotMessage: "Does have keys",
 		Condition: func(args *common.Args) bool {
 			if args.Len() < 3 {
 				panic("")
@@ -170,8 +170,8 @@ var expectations = expectationSet(map[string]expectation{
 		},
 	},
 	"has properties": expectation{
-		Message:    "",
-		NotMessage: "",
+		Message:    "Does not have properties",
+		NotMessage: "Does have properties",
 		Condition: func(args *common.Args) bool {
 			if args.Len() < 3 {
 				panic("")

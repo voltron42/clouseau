@@ -199,7 +199,13 @@ type Log struct {
 }
 
 func (l *Log) hasErrors() bool {
-	return len(l.tests) > 0
+	for _, test := range l.tests {
+		if test.exception != nil {
+			fmt.Println(test.exception)
+			return true
+		}
+	}
+	return false
 }
 
 func newLog() *Log {
