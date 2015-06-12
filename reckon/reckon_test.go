@@ -414,6 +414,83 @@ func Test(t *testing.T) {
 					})
 				})
 			})
+			suite.Describe("Property", func(suite *suiteshop.Suite) {
+				suite.Test("is", func(log *suiteshop.Log) {
+					reckon.That(map[int]string{3: "a"}).Has.Property(3)
+					reckon.That(map[int]string{3: "a"}).Has.Property(3, "a")
+					reckon.That(map[string]int{"a": 3}).Has.Property("a", 3)
+					reckon.That(map[string]int{"a": 3}).Has.Property("a")
+					reckon.That(struct{ A int }{A: 3}).Has.Property("A")
+					reckon.That(struct{ A int }{A: 3}).Has.Property("A", 3)
+				})
+				suite.Test("is not", func(log *suiteshop.Log) {
+					reckon.That(func() {
+						reckon.That(map[int]string{3: "a"}).Has.Property(2)
+					}).Will.PanicWith("Does not have property")
+					reckon.That(func() {
+						reckon.That(map[int]string{3: "a"}).Has.Property(3, "b")
+					}).Will.PanicWith("Does not have property")
+					reckon.That(func() {
+						reckon.That(map[string]int{"a": 3}).Has.Property("b")
+					}).Will.PanicWith("Does not have property")
+					reckon.That(func() {
+						reckon.That(map[string]int{"a": 3}).Has.Property("a", 2)
+					}).Will.PanicWith("Does not have property")
+					reckon.That(func() {
+						reckon.That(struct{ A int }{A: 3}).Has.Property("B")
+					}).Will.PanicWith("Does not have property")
+					reckon.That(func() {
+						reckon.That(struct{ A int }{A: 3}).Has.Property("A", 2)
+					}).Will.PanicWith("Does not have property")
+				})
+			})
+			suite.Describe("Not Property", func(suite *suiteshop.Suite) {
+				suite.Test("is", func(log *suiteshop.Log) {
+					reckon.That(map[int]string{3: "a"}).Has.No.Property(2)
+					reckon.That(map[int]string{3: "a"}).Has.No.Property(3, "b")
+					reckon.That(map[string]int{"a": 3}).Has.No.Property("b")
+					reckon.That(map[string]int{"a": 3}).Has.No.Property("a", 2)
+					reckon.That(struct{ A int }{A: 3}).Has.No.Property("B")
+					reckon.That(struct{ A int }{A: 3}).Has.No.Property("A", 2)
+				})
+				suite.Test("is not", func(log *suiteshop.Log) {
+					reckon.That(func() {
+						reckon.That(map[int]string{3: "a"}).Has.No.Property(3)
+					}).Will.PanicWith("Does have property")
+					reckon.That(func() {
+						reckon.That(map[int]string{3: "a"}).Has.No.Property(3, "a")
+					}).Will.PanicWith("Does have property")
+					reckon.That(func() {
+						reckon.That(map[string]int{"a": 3}).Has.No.Property("a")
+					}).Will.PanicWith("Does have property")
+					reckon.That(func() {
+						reckon.That(map[string]int{"a": 3}).Has.No.Property("a", 3)
+					}).Will.PanicWith("Does have property")
+					reckon.That(func() {
+						reckon.That(struct{ A int }{A: 3}).Has.No.Property("A")
+					}).Will.PanicWith("Does have property")
+					reckon.That(func() {
+						reckon.That(struct{ A int }{A: 3}).Has.No.Property("A", 3)
+					}).Will.PanicWith("Does have property")
+				})
+			})
+			suite.Describe("Deep Property", func(suite *suiteshop.Suite) {
+				suite.Test("is", func(log *suiteshop.Log) {
+					obj := map[string]interface{}{
+						"a": struct {
+							B interface{}
+						}{
+							B: []interface{}{
+								map[string]interface{}{
+									"c": true,
+								},
+							},
+						},
+					}
+					reckon.That(obj).Has.DeepProperty("a.B.0.c")
+					reckon.That(obj).Has.DeepProperty("a.B.0.c", true)
+				})
+			})
 		})
 	}).Post(fn) {
 		t.Fatal(strings.Join(list, "\n"))

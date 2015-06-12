@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -21,7 +22,7 @@ var expectations = expectationSet(map[string]expectation{
 		Message:    "Does not exist",
 		NotMessage: "Does exist",
 		Condition: func(args *common.Args) bool {
-			actual := args.ValueOf(0)
+			actual := args.Get(0).ValueOf()
 			return !actual.IsNil() && actual.IsValid()
 		},
 	},
@@ -29,7 +30,7 @@ var expectations = expectationSet(map[string]expectation{
 		Message:    "Has not panicked",
 		NotMessage: "Has panicked",
 		Condition: func(args *common.Args) bool {
-			fn := args.ValueOf(0)
+			fn := args.Get(0).ValueOf()
 			err := ""
 			safeCall(fn, &err)
 			if len(err) == 0 {
@@ -42,21 +43,21 @@ var expectations = expectationSet(map[string]expectation{
 		Message:    "Has panicked with incorrect message",
 		NotMessage: "Has panicked with correct message",
 		Condition: func(args *common.Args) bool {
-			fn := args.ValueOf(0)
+			fn := args.Get(0).ValueOf()
 			err := ""
 			safeCall(fn, &err)
 			if len(err) == 0 {
 				panic("Has not panicked")
 			}
-			return reflect.DeepEqual(err, args.Get(1))
+			return reflect.DeepEqual(err, args.Get(1).Elem())
 		},
 	},
 	"matches": expectation{
 		Message:    "Does not match string",
 		NotMessage: "Does match string",
 		Condition: func(args *common.Args) bool {
-			actual := args.String(0)
-			regex := args.String(1)
+			actual := args.Get(0).String()
+			regex := args.Get(1).String()
 			exp := regexp.MustCompile(regex)
 			return exp.MatchString(actual)
 		},
@@ -65,8 +66,8 @@ var expectations = expectationSet(map[string]expectation{
 		Message:    "Does not contain string",
 		NotMessage: "Does contain string",
 		Condition: func(args *common.Args) bool {
-			actual := args.String(0)
-			needle := args.String(1)
+			actual := args.Get(0).String()
+			needle := args.Get(1).String()
 			return strings.Contains(actual, needle)
 		},
 	},
@@ -74,32 +75,32 @@ var expectations = expectationSet(map[string]expectation{
 		Message:    "Is not kind of",
 		NotMessage: "Is kind of",
 		Condition: func(args *common.Args) bool {
-			return args.ValueOf(0).Kind() == args.Get(1)
+			return args.Get(0).ValueOf().Kind() == args.Get(1).Elem()
 		},
 	},
 	"instance of": expectation{
 		Message:    "Is not an instance of",
 		NotMessage: "Is an instance of",
 		Condition: func(args *common.Args) bool {
-			return reflect.DeepEqual(args.ValueOf(0).Type(), args.Get(1))
+			return reflect.DeepEqual(args.Get(0).TypeOf(), args.Get(1).Elem())
 		},
 	},
 	"is zero": expectation{
 		Message:    "Is not the zero value for type",
 		NotMessage: "Is the zero value for type",
 		Condition: func(args *common.Args) bool {
-			myType := args.TypeOf(0)
-			myValue := args.ValueOf(0)
+			myType := args.Get(0).TypeOf()
+			myValue := args.Get(0).Elem()
 			zeroValue := reflect.Zero(myType)
-			return reflect.DeepEqual(myValue.Interface(), zeroValue.Interface())
+			return reflect.DeepEqual(myValue, zeroValue.Interface())
 		},
 	},
 	"greater than": expectation{
 		Message:    "Is not greater than",
 		NotMessage: "Is greater than",
 		Condition: func(args *common.Args) bool {
-			myValue := args.Float64(0)
-			bound := args.Float64(1)
+			myValue := args.Get(0).Float64()
+			bound := args.Get(1).Float64()
 			return myValue > bound
 		},
 	},
@@ -107,8 +108,8 @@ var expectations = expectationSet(map[string]expectation{
 		Message:    "Is not less than",
 		NotMessage: "Is less than",
 		Condition: func(args *common.Args) bool {
-			myValue := args.Float64(0)
-			bound := args.Float64(1)
+			myValue := args.Get(0).Float64()
+			bound := args.Get(1).Float64()
 			return myValue < bound
 		},
 	},
@@ -116,31 +117,10 @@ var expectations = expectationSet(map[string]expectation{
 		Message:    "Is not within",
 		NotMessage: "Is within",
 		Condition: func(args *common.Args) bool {
-			myValue := args.Float64(0)
-			low := args.Float64(1)
-			high := args.Float64(2)
+			myValue := args.Get(0).Float64()
+			low := args.Get(1).Float64()
+			high := args.Get(2).Float64()
 			return myValue > low && myValue < high
-		},
-	},
-	"has property": expectation{
-		Message:    "",
-		NotMessage: "",
-		Condition: func(args *common.Args) bool {
-			return false
-		},
-	},
-	"has key": expectation{
-		Message:    "",
-		NotMessage: "",
-		Condition: func(args *common.Args) bool {
-			return false
-		},
-	},
-	"has deep property": expectation{
-		Message:    "",
-		NotMessage: "",
-		Condition: func(args *common.Args) bool {
-			return false
 		},
 	},
 	"has keys": expectation{
@@ -148,18 +128,18 @@ var expectations = expectationSet(map[string]expectation{
 		NotMessage: "Does have keys",
 		Condition: func(args *common.Args) bool {
 			if args.Len() < 3 {
-				panic("")
+				panic("Has no keys")
 			}
-			actual := args.ValueOf(0)
+			actual := args.Get(0).ValueOf()
 			if actual.Kind() != reflect.Map {
-				panic("")
+				panic("Value is not a Map")
 			}
 			keys := []string{}
 			for _, value := range actual.MapKeys() {
 				keys = append(keys, value.String())
 			}
 			keyList := "," + strings.Join(keys, ",") + ","
-			state := args.Bool(1)
+			state := args.Get(1).Bool()
 			for _, param := range (*args)[2:] {
 				key := fmt.Sprintf("%v", param)
 				if state == strings.Contains(keyList, ","+key+",") {
@@ -174,11 +154,11 @@ var expectations = expectationSet(map[string]expectation{
 		NotMessage: "Does have properties",
 		Condition: func(args *common.Args) bool {
 			if args.Len() < 3 {
-				panic("")
+				panic("Has no properties")
 			}
-			actualType := args.TypeOf(0)
+			actualType := args.Get(0).TypeOf()
 			if actualType.Kind() != reflect.Struct {
-				panic("")
+				panic("Value is not a Struct")
 			}
 			count := actualType.NumField()
 			keys := []string{}
@@ -186,7 +166,7 @@ var expectations = expectationSet(map[string]expectation{
 				keys = append(keys, actualType.Field(index).Name)
 			}
 			keyList := "," + strings.Join(keys, ",") + ","
-			state := args.Bool(1)
+			state := args.Get(1).Bool()
 			for _, param := range (*args)[2:] {
 				key := fmt.Sprintf("%v", param)
 				if state == strings.Contains(keyList, ","+key+",") {
@@ -196,7 +176,79 @@ var expectations = expectationSet(map[string]expectation{
 			return !state
 		},
 	},
+	"has property": expectation{
+		Message:    "Does not have property",
+		NotMessage: "Does have property",
+		Condition: func(args *common.Args) bool {
+			actual, key, values := getHasParams(args)
+			value := getKey(actual, key)
+			if !value.IsValid() {
+				return false
+			}
+			if values.Len() == 0 {
+				return true
+			}
+			matches := values.Some(func(item *common.Arg, index int) bool {
+				return reflect.DeepEqual(value.Interface(), item.Elem())
+			})
+			return matches.Len() > 0
+		},
+	},
+	"has deep property": expectation{
+		Message:    "Does not have deep property",
+		NotMessage: "Does have deep property",
+		Condition: func(args *common.Args) bool {
+			actual, key, values := getHasParams(args)
+			keys := strings.Split(key.String(), ".")
+			for _, k := range keys {
+				actual = getKey(actual, reflect.ValueOf(k))
+			}
+			value := actual
+			if !value.IsValid() {
+				return false
+			}
+			if values.Len() == 0 {
+				return true
+			}
+			matches := values.Some(func(item *common.Arg, index int) bool {
+				return reflect.DeepEqual(value.Interface(), item.Elem())
+			})
+			return matches.Len() > 0
+		},
+	},
 })
+
+func getHasParams(args *common.Args) (reflect.Value, reflect.Value, *common.Args) {
+	if args.Len() < 2 {
+		panic("Missing key")
+	}
+	actual := args.Get(0).ValueOf()
+	key := args.Get(1).ValueOf()
+	values := args.Subset(2, -1)
+	return actual, key, values
+}
+
+func getKey(obj, key reflect.Value) reflect.Value {
+	for obj.Kind() == reflect.Interface {
+		obj = obj.Elem()
+	}
+	if obj.Kind() == reflect.Map {
+		fmt.Println("map")
+		return obj.MapIndex(key)
+	} else if obj.Kind() == reflect.Struct {
+		fmt.Println("struct")
+		return obj.FieldByName(key.String())
+	} else if obj.Kind() == reflect.Array || obj.Kind() == reflect.Slice {
+		fmt.Println("slice")
+		index, err := strconv.Atoi(key.String())
+		if err != nil {
+			panic(err)
+		}
+		return obj.Index(index)
+	} else {
+		panic("Value is not a map, struct, slice, or array")
+	}
+}
 
 func safeCall(fn reflect.Value, err interface{}) {
 	defer func() {

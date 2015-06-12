@@ -137,24 +137,20 @@ type owner struct {
 	state  bool
 }
 
-func (o *owner) Property(name string, values ...interface{}) {
+func (o *owner) Property(name interface{}, values ...interface{}) {
 	o.getProp("has property", name, values)
-}
-
-func (o *owner) Key(name string, values ...interface{}) {
-	o.getProp("has key", name, values)
 }
 
 func (o *owner) DeepProperty(name string, values ...interface{}) {
 	o.getProp("has deep property", name, values)
 }
 
-func (o *owner) getProp(fn, name string, values []interface{}) {
+func (o *owner) getProp(fn string, name interface{}, values []interface{}) {
 	params := append([]interface{}{}, o.actual, name)
 	for _, value := range values {
 		params = append(params, value)
 	}
-	expectations.check("has deep property", o.state, params...)
+	expectations.check(fn, o.state, params...)
 }
 
 type length struct {
@@ -179,19 +175,17 @@ type listing struct {
 	state  bool
 }
 
-func (l *listing) Keys(names ...string) {
+func (l *listing) Keys(names ...interface{}) {
 	l.getList("has keys", names)
 }
 
-func (l *listing) Properties(names ...string) {
+func (l *listing) Properties(names ...interface{}) {
 	l.getList("has properties", names)
 }
 
-func (l *listing) getList(fn string, names []string) {
+func (l *listing) getList(fn string, names []interface{}) {
 	params := append([]interface{}{}, l.actual, l.state)
-	for _, name := range names {
-		params = append(params, name)
-	}
+	params = append(params, names...)
 	expectations.check(fn, true, params...)
 }
 

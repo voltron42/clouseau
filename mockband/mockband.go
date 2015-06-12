@@ -29,7 +29,7 @@ func (m *Mock) CalledVarArg(name string, params ...interface{}) *common.Args {
 		return m.Called(name)
 	} else {
 		args := common.Args(params)
-		last := reflect.ValueOf(args.PopLast())
+		last := reflect.ValueOf(args.PopLast().Elem())
 		err := args.AddAll(last)
 		if err != nil {
 			args.Add(last)
